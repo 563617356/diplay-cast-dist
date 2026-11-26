@@ -8,6 +8,15 @@ iPhone --CarPlay--> OpenWrt（接收 + 转封装 + DLNA 推送）--DLNA--> 车�
 
 OpenWrt 在这里是**协议网关**：它一边假装成车机接住 iPhone 的 CarPlay 流，另一边假装成 DLNA 媒体服务器把画面推给车机。两端都不需要改造。
 
+## 两个仓库
+
+| 仓库 | 用途 |
+|---|---|
+| [OpenXPlay-DiPlay-Cast](https://github.com/563617356/OpenXPlay-DiPlay-Cast) | **源码主库**：开发、CI 云编译、Release 发布都在这里 |
+| **本仓库** `diplay-cast-dist` | **分发库**：开箱即用的安装包 + 配置 + 完整源码镜像（`source/`），方便直接下载 |
+
+两库内容各自保留。本仓库的 `source/` 是源码主库的完整快照（v0.1.2），若要做二次开发或重新编译，请到源码主库。
+
 ## 选哪个文件
 
 先看你的路由器架构，再看固件版本：

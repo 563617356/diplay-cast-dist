@@ -1,0 +1,44 @@
+#!/bin/sh
+# SPDX-FileCopyrightText: 2026 OpenXPlay.org
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Wrapper used as the receiver's --oxp-relay binary. The receiver (direlay-linux)
+# spawns this script with its own wire args (--unix SOCK --control-stdin ...).
+# We prepend --cast and friends from UCI, then exec the real Stream output
+# process so the PID and stdio pipes stay intact for the supervisor.
+
+REAL=/usr/bin/oxp-relay
+
+set -- "$@"
+args="--cast"
+
+add() {
+	# $1 = uci option name, $2 = flag (may be empty for boolean)
+	v=$(uci -q get diplay.main."$1" 2>/dev/null)
+	[ -n "$v" ] || return 0
+	if [ -n "$2" ]; then
+		args="$args $2 $v"
+	else
+		args="$args $v"
+	fi
+}
+
+enabled=$(uci -q get diplay.main.cast_enabled 2>/dev/null)
+[ "$enabled" = "0" ] && args=""
+
+add cast_udn --cast-udn
+add cast_width --cast-width
+add cast_height --cast-height
+add cast_fps --cast-fps
+add cast_port --cast-port
+add cast_title --cast-title
+add cast_interface --cast-interface
+
+no_audio=$(uci -q get diplay.main.cast_no_audio 2>/dev/null)
+[ "$no_audio" = "1" ] && args="$args --cast-no-audio"
+
+extra=$(uci -q get diplay.main.cast_extra_args 2>/dev/null)
+[ -n "$extra" ] && args="$args $extra"
+
+# shellcheck disable=SC2086
+exec "$REAL" $args "$@"

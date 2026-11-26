@@ -1,0 +1,83 @@
+#!/bin/sh /etc/rc.common
+# SPDX-FileCopyrightText: 2026 OpenXPlay.org
+# SPDX-License-Identifier: AGPL-3.0-only
+
+USE_PROCD=1
+START=95
+STOP=10
+
+CONFIG=diplay
+
+# Append "flag value" from a UCI option, if non-empty.
+append_opt() {
+	local opt="$1" flag="$2" value
+	config_get value main "$opt"
+	[ -n "$value" ] && append args "$flag $value"
+}
+
+start_service() {
+	config_load "$CONFIG"
+
+	local enabled
+	config_get_bool enabled main enabled 0
+	[ "$enabled" -eq 1 ] || return 0
+
+	# The receiver (direlay-linux) reads identity.pk8 / certificate.p7b from
+	# --identity-dir. Refuse to start if either is missing.
+	local identity_dir
+	config_get identity_dir main identity_dir /etc/diplay/identity
+	if [ ! -s "$identity_dir/identity.pk8" ] || [ ! -s "$identity_dir/certificate.p7b" ]; then
+		echo "diplay-cast: missing MFi identity in $identity_dir (identity.pk8 / certificate.p7b)" >&2
+		echo "diplay-cast: place them there with mode 0600" >&2
+		return 1
+	fi
+	chmod 0600 "$identity_dir/identity.pk8" "$identity_dir/certificate.p7b" 2>/dev/null
+
+	local state_dir stream_socket receiver_port extra_args
+	config_get state_dir main state_dir /var/lib/diplay
+	config_get stream_socket main stream_socket /run/oxp-relay.sock
+	config_get receiver_port main receiver_port 8443
+	config_get extra_args main extra_args ""
+	mkdir -p "$state_dir"
+
+	# Build receiver args. It will spawn the output process itself via
+	# --oxp-relay, pointing at our wrapper which injects --cast.
+	local args=""
+	append args "--identity-dir $identity_dir"
+	append args "--state-dir $state_dir"
+	append args "--stream-socket $stream_socket"
+	append args "--oxp-relay /usr/bin/oxp-relay-wrapper"
+	append args "--receiver-port $receiver_port"
+
+	append_opt transport --transport
+	append_opt device_preset --device-preset
+	append_opt wifi_interface --wifi-interface
+	append_opt wifi_channel --wifi-channel
+	append_opt wifi_ssid --wifi-ssid
+	append_opt wifi_key --wifi-password
+	append_opt network_mode --network-mode
+	append_opt iphone --iphone
+	append_opt usb_charging_ma --usb-charging-ma
+
+	local pair
+	config_get pair main pair_seconds 0
+	[ "$pair" -gt 0 ] 2>/dev/null && append args "--pair $pair"
+
+	# Country code is applied to the Wi-Fi regulatory domain via env; the
+	# receiver picks it up from the host profile / CRDA in OpenWrt.
+	local wifi_country
+	config_get wifi_country main wifi_country CN
+	export OXP_WIFI_COUNTRY="$wifi_country"
+
+	procd_open_instance diplay-cast
+	procd_set_param command /usr/bin/openxplay-receiver $args $extra_args
+	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}
+	procd_set_param stdout 1
+	procd_set_param stderr 1
+	procd_set_param file /etc/config/diplay
+	procd_close_instance
+}
+
+service_triggers() {
+	procd_add_reload_trigger "$CONFIG"
+}

@@ -1,0 +1,9 @@
+# Shell scripts and CI config must keep LF endings — they run on Linux in Actions.
+*.sh text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+Makefile text eol=lf
+# Extensionless shell scripts / config inside the package files tree.
+**/files/etc/init.d/* text eol=lf
+**/files/usr/bin/* text eol=lf
+**/files/etc/config/* text eol=lf

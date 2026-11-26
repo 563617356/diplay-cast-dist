@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 OpenXPlay.org
+# SPDX-License-Identifier: AGPL-3.0-only
+# DLNA/UPnP AVTransport output for OpenXPlay Stream (Linux/OpenWrt).
+# Ported from kotlin/cast. Standard library only on the network side so the
+# crate cross-compiles to musl targets without an async runtime.
+
+[package]
+name = "oxp-cast"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "DLNA cast output for OpenXPlay Stream"
+
+[dependencies]
+oxp-core = { path = "../oxp-core" }
+oxp-media = { path = "../oxp-media" }

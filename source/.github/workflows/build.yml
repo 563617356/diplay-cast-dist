@@ -1,0 +1,194 @@
+# SPDX-FileCopyrightText: 2026 OpenXPlay.org
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Cloud build: test oxp-cast, cross-compile static musl binaries, then produce
+# both package formats — .ipk (OpenWrt 24.10 and earlier / opkg) and .apk
+# (OpenWrt 25.12+ / apk-tools 3.x) — for aarch64 and x86_64 soft routers.
+# The ipk is assembled with ar/tar; the apk MUST be built with the 25.12 SDK
+# because it is an ADB-signed archive (magic "ADBd").
+
+name: Build OpenWrt ipk + apk
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Unit tests (oxp-cast)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal && rustup default stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - name: Test oxp-cast
+        run: cargo test -p oxp-cast
+
+  build:
+    name: Build ${{ matrix.arch }}
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: aarch64
+            target: aarch64-unknown-linux-musl
+          - arch: x86_64
+            target: x86_64-unknown-linux-musl
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang make curl tar binutils zstd
+
+      - name: Install Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component llvm-tools
+          rustup default stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            rust
+            relay/rust
+          key: ${{ matrix.arch }}
+
+      - name: Cross-compile static output relay (--cast enabled)
+        working-directory: openwrt
+        env:
+          TARGET: ${{ matrix.target }}
+        run: bash build-musl.sh
+
+      - name: Cross-compile static receiver (direlay-linux)
+        working-directory: openwrt
+        env:
+          TARGET: ${{ matrix.target }}
+        run: bash build-relay-musl.sh
+
+      - name: Verify binaries are static
+        run: |
+          for BIN in openwrt/diplay-cast/src/openxplay-relay openwrt/diplay-cast/src/openxplay-receiver; do
+            file "$BIN"
+            if readelf -l "$BIN" | grep -q INTERP; then
+              echo "ERROR: $BIN is dynamically linked" >&2
+              exit 1
+            fi
+            echo "OK: $BIN is static"
+          done
+
+      - name: Pack ipk (ar + tar.gz, for opkg firmware)
+        working-directory: openwrt
+        env:
+          TARGET: ${{ matrix.target }}
+        run: bash pack-ipk.sh
+
+      - name: Build apk (OpenWrt 25.12 SDK, for apk firmware)
+        working-directory: openwrt
+        env:
+          TARGET: ${{ matrix.target }}
+        run: bash build-apk.sh
+
+      - name: Stage uniquely-named binaries
+        run: |
+          cp openwrt/diplay-cast/src/openxplay-relay openwrt/diplay-cast/src/openxplay-relay-${{ matrix.arch }}
+          cp openwrt/diplay-cast/src/openxplay-receiver openwrt/diplay-cast/src/openxplay-receiver-${{ matrix.arch }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: diplay-cast-${{ matrix.arch }}
+          path: |
+            openwrt/diplay-cast/src/openxplay-relay-${{ matrix.arch }}
+            openwrt/diplay-cast/src/openxplay-receiver-${{ matrix.arch }}
+            openwrt/dist/*.ipk
+            openwrt/dist/*.apk
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # gh CLI needs a git repo even though no source is used here.
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Collect assets and create Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          echo "=== downloaded artifacts ==="
+          find artifacts -type f -printf '%p %s bytes\n' | sort
+
+          # Recursive: download-artifact keeps per-job subdirectories.
+          mapfile -t FILES < <(find artifacts -type f \
+            \( -name '*.ipk' -o -name '*.apk' \
+               -o -name 'openxplay-relay-*' -o -name 'openxplay-receiver-*' \) | sort)
+          N=${#FILES[@]}
+          echo "asset count: $N"
+          [ "$N" -gt 0 ] || { echo "::error::no release assets found"; exit 1; }
+
+          # GitHub rejects 0-byte assets — drop any accidental placeholders.
+          find artifacts -type f -empty -delete
+
+          # Re-check after pruning (0-byte files may have been in FILES).
+          mapfile -t FILES < <(find artifacts -type f \
+            \( -name '*.ipk' -o -name '*.apk' \
+               -o -name 'openxplay-relay-*' -o -name 'openxplay-receiver-*' \) | sort)
+          [ "${#FILES[@]}" -gt 0 ] || { echo "::error::no assets after pruning"; exit 1; }
+
+          TAG="${GITHUB_REF_NAME}"
+          # tag re-runs: Release already exists -> delete via API (not gh release view).
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" >/dev/null 2>&1; then
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}"
+          fi
+
+          NOTES_FILE="$(mktemp)"
+          cat > "$NOTES_FILE" <<'NOTES'
+          ## DiPlay Cast v0.1.2 — OpenWrt 全栈 CarPlay → DLNA，ipk + apk 双格式
+
+          同时发布两种包格式，按固件版本选择：
+
+          | 固件 | 包格式 | 安装命令 |
+          |---|---|---|
+          | OpenWrt/ImmortalWrt 24.10 及更早 (opkg) | `.ipk` | `opkg install diplay-cast_*.ipk` |
+          | OpenWrt/ImmortalWrt 25.12+ (apk-tools 3.x) | `.apk` | `apk add --allow-untrusted diplay-cast-*.apk` |
+
+          **架构**：`aarch64_cortex-a53`（N1/R4S/MT6000/IPQ60xx 等）、`x86_64` 软路由。
+          apk 文件名里的架构段是我们额外加的（apk 自身文件名不带架构），安装按内部元数据判定。
+
+          ipk 内含三个二进制：`openxplay-receiver`（接收端主进程）、`oxp-relay`（输出端）、
+          `oxp-relay-wrapper`（注入 --cast 参数）。车机只需 DLNA 接收端。
+
+          **MFi 证书不随包分发**：安装后自行把 `identity.pk8` / `certificate.p7b`
+          放到 `/etc/diplay/identity/`（权限 600）。详见仓库 README。
+          NOTES
+          # Only delete the Release, never the tag (tag triggered this run).
+          gh release create "$TAG" --title "$TAG" \
+            --notes-file "$NOTES_FILE" "${FILES[@]}"
+          rm -f "$NOTES_FILE"

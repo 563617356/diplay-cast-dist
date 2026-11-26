@@ -1,0 +1,24 @@
+{
+	"luci-app-diplay": {
+		"description": "Grant access to DiPlay Cast (DLNA CarPlay) configuration",
+		"read": {
+			"uci": ["diplay"],
+			"ubus": {
+				"service": ["status"]
+			},
+			"file": {
+				"/etc/diplay/identity/*": ["list"]
+			}
+		},
+		"write": {
+			"uci": ["diplay"],
+			"ubus": {
+				"service": ["restart"]
+			},
+			"file": {
+				"/etc/diplay/identity/identity.pk8": ["write"],
+				"/etc/diplay/identity/certificate.p7b": ["write"]
+			}
+		}
+	}
+}

@@ -1,0 +1,42 @@
+config diplay 'main'
+	option enabled '1'
+
+# ---- iPhone connection (handled by the receiver: direlay-linux) ----
+# transport: wireless (Bluetooth + Wi-Fi) or usb (USB Host, iPhone wired)
+	option transport 'wireless'
+	option device_preset 'auto'
+#	option device_preset 'phicomm-n1'   # or: generic / msm8916
+	option pair_seconds '0'             # 0 = no auto-accept window; >0 = auto-accept pairing seconds
+
+# Receiver hotspot (used in wireless mode; car phone connects here)
+	option wifi_ssid 'OpenXPlay-Car'
+	option wifi_key 'openxplay'
+	option wifi_country 'CN'
+	option wifi_channel '6'
+	option wifi_interface 'wlan0'
+	option network_mode 'device-hotspot'   # device-hotspot / shared-wifi
+#	option iphone 'AA:BB:CC:DD:EE:FF'     # optional: select a bonded iPhone
+#	option usb_charging_ma '500'          # usb only: 500 / 1500 / 2400
+
+# ---- MFi identity (place files yourself, mode 0600) ----
+	option identity_dir '/etc/diplay/identity'
+
+# ---- State / runtime ----
+	option state_dir '/var/lib/diplay'
+	option stream_socket '/run/oxp-relay.sock'
+	option receiver_port '8443'
+
+# ---- DLNA cast output (injected into oxp-relay via wrapper) ----
+	option cast_enabled '1'
+	option cast_width '1280'
+	option cast_height '720'
+	option cast_fps '30'
+	option cast_port '0'                  # 0 = auto
+	option cast_title 'CarPlay'
+	option cast_no_audio '0'
+#	option cast_udn 'uuid:xxxx'           # optional: pin to a specific DMR
+#	option cast_interface '10.77.0.1'     # optional: LAN IPv4, avoids wrong-NIC selection
+
+# ---- Advanced ----
+	option extra_args ''                  # extra args appended to the RECEIVER
+	option cast_extra_args ''             # extra args appended to oxp-relay (via wrapper)
