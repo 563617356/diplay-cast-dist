@@ -1,0 +1,57 @@
+# ===== /etc/config/diplay — DiPlay Cast v0.1.2 =====
+# 全栈版本：接收端 + 输出端 + DLNA 都在路由器上运行
+# 安装:
+#   OpenWrt/ImmortalWrt 24.10 及更早 (opkg): opkg install diplay-cast_0.1.2-1_<arch>.ipk
+#   OpenWrt/ImmortalWrt 25.12+ (apk):         apk add --allow-untrusted diplay-cast-0.1.2-r1-<arch>.apk
+# 生效: /etc/init.d/diplay-cast restart
+# 日志: logread -f | grep -iE 'oxp|diplay|carplay'
+
+config diplay 'main'
+	option enabled '1'
+
+# ---- iPhone 连接（接收端 direlay-linux 负责）----
+	option transport 'wireless'           # wireless(蓝牙+Wi-Fi) / usb(USB Host 有线)
+	option device_preset 'auto'           # auto / phicomm-n1 / generic / msm8916
+	option pair_seconds '0'               # 0=不自动配对；>0=自动接受配对秒数
+
+# 无线模式的热点（车机/手机连它）
+	option wifi_ssid 'OpenXPlay-Car'
+	option wifi_key 'openxplay'
+	option wifi_country 'CN'
+	option wifi_channel '6'
+	option wifi_interface 'wlan0'
+	option network_mode 'device-hotspot'  # device-hotspot / shared-wifi
+#	option iphone 'AA:BB:CC:DD:EE:FF'     # 可选：指定已配对的 iPhone
+#	option usb_charging_ma '500'          # 仅 usb：500 / 1500 / 2400
+
+# ---- MFi 证书（自己放，权限 600）----
+	option identity_dir '/etc/diplay/identity'
+#	放置: identity.pk8 + certificate.p7b 到该目录
+#	chmod 0700 /etc/diplay/identity && chmod 0600 /etc/diplay/identity/*
+
+# ---- 运行时 ----
+	option state_dir '/var/lib/diplay'
+	option stream_socket '/run/oxp-relay.sock'
+	option receiver_port '8443'
+
+# ---- DLNA cast 输出（由 wrapper 注入输出端）----
+	option cast_enabled '1'
+	option cast_width '1280'
+	option cast_height '720'
+	option cast_fps '30'
+	option cast_port '0'                  # 0=自动
+	option cast_title 'CarPlay'
+	option cast_no_audio '0'
+#	option cast_udn 'uuid:xxxx'           # 可选：指定车机 DMR 的 UDN
+#	option cast_interface '10.77.0.1'     # 可选：指定 LAN IPv4（多网卡防选错）
+
+# ---- 高级 ----
+	option extra_args ''                  # 追加给接收端
+	option cast_extra_args ''             # 追加给输出端（经 wrapper）
+
+# ===== 快速部署 =====
+# 1. 按固件版本安装对应安装包（见顶部安装命令）
+# 2. mkdir -p /etc/diplay/identity; scp 两个证书进去; chmod 600
+# 3. vi /etc/config/diplay  (无蓝牙的设备把 transport 改成 usb)
+# 4. /etc/init.d/diplay-cast enable && /etc/init.d/diplay-cast start
+# 5. iPhone 连接（首次亮屏解锁）→ 车机开 DLNA 接收 → 应自动发现并推流
