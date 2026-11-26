@@ -40,6 +40,11 @@ jobs:
       - name: Test oxp-cast
         run: cargo test -p oxp-cast
 
+      # Regression: --cast / --cast-no-audio must parse as valueless flags.
+      # The OpenWrt wrapper relies on this; a value-consuming parser breaks it.
+      - name: Test oxp-bin arg parsing (cast flags)
+        run: cargo test -p oxp-bin --bin oxp-relay cast_flags_are_boolean
+
   build:
     name: Build ${{ matrix.arch }}
     needs: test

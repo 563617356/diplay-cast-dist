@@ -37,7 +37,15 @@ impl Args {
         while let Some(k) = a.next() {
             if k == "--help"
                 || k == "--stdio"
-                || (["--no-tls", "--pairing", "--control-stdin", "--host-ui"].contains(&k.as_str())
+                || ([
+                    "--no-tls",
+                    "--pairing",
+                    "--control-stdin",
+                    "--host-ui",
+                    "--cast",
+                    "--cast-no-audio",
+                ]
+                .contains(&k.as_str())
                     && allowed.contains(&k.as_str()))
             {
                 if map.insert(k, "true".into()).is_some() {

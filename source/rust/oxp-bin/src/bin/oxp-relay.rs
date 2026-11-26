@@ -1449,6 +1449,28 @@ mod tests {
     use std::path::PathBuf;
 
     #[test]
+    fn cast_flags_are_boolean_and_do_not_consume_the_next_option() {
+        // The OpenWrt wrapper invokes: --cast --cast-width 1280 ... --unix SOCK
+        // --cast and --cast-no-audio must be valueless flags, not consume a value.
+        let (args, _rest) = parse_arguments(
+            [
+                "--cast",
+                "--cast-width",
+                "1280",
+                "--cast-no-audio",
+                "--unix",
+                "/run/oxp-relay.sock",
+            ]
+            .map(str::to_owned),
+        )
+        .expect("cast flags must parse without a placeholder value");
+        assert_eq!(args.get("--cast"), Some("true"));
+        assert_eq!(args.get("--cast-no-audio"), Some("true"));
+        assert_eq!(args.get("--cast-width"), Some("1280"));
+        assert_eq!(args.get("--unix"), Some("/run/oxp-relay.sock"));
+    }
+
+    #[test]
     fn web_transcode_flag_is_independent_validated_and_documented() {
         for mode in ["auto", "off"] {
             assert!(parse_arguments(
