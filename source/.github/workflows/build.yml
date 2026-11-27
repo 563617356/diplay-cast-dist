@@ -179,7 +179,13 @@ jobs:
 
           NOTES_FILE="$(mktemp)"
           cat > "$NOTES_FILE" <<'NOTES'
-          ## DiPlay Cast v0.1.2 — OpenWrt 全栈 CarPlay → DLNA，ipk + apk 双格式
+          ## DiPlay Cast v0.1.3 — OpenWrt 全栈 CarPlay → DLNA，ipk + apk 双格式
+
+          **v0.1.3 变更**（相对 v0.1.2）：
+          - 修复 `--cast` / `--cast-no-audio` 被当成带值参数导致 wrapper 启动失败的问题
+            （无值 `--cast` 现在可正常解析）。
+          - 新增裸二进制 `oxp-replay-<arch>`，支持无 WiFi / 无 iPhone 的本地 H.264
+            回放验证 DLNA 投递链路。
 
           同时发布两种包格式，按固件版本选择：
 
