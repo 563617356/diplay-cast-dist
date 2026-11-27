@@ -64,5 +64,11 @@ cargo build --release --target "$TARGET" -p oxp-bin
 BIN="$RUST_DIR/target/$TARGET/release/oxp-relay"
 [ -x "$BIN" ] || { echo "Expected binary not found: $BIN" >&2; exit 1; }
 cp -f "$BIN" "$OUT_DIR/openxplay-relay"
-echo "==> Binary ready:"
-ls -lh "$OUT_DIR/openxplay-relay"
+# oxp-replay is the local H.264 file producer used for DLNA-only testing
+# (path C): it feeds an Annex-B file into oxp-relay over a unix socket,
+# bypassing the CarPlay receiver entirely (no WiFi / AP needed).
+REPLAY="$RUST_DIR/target/$TARGET/release/oxp-replay"
+[ -x "$REPLAY" ] || { echo "Expected replay binary not found: $REPLAY" >&2; exit 1; }
+cp -f "$REPLAY" "$OUT_DIR/oxp-replay"
+echo "==> Binaries ready:"
+ls -lh "$OUT_DIR/openxplay-relay" "$OUT_DIR/oxp-replay"

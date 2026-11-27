@@ -91,7 +91,7 @@ jobs:
 
       - name: Verify binaries are static
         run: |
-          for BIN in openwrt/diplay-cast/src/openxplay-relay openwrt/diplay-cast/src/openxplay-receiver; do
+          for BIN in openwrt/diplay-cast/src/openxplay-relay openwrt/diplay-cast/src/openxplay-receiver openwrt/diplay-cast/src/oxp-replay; do
             file "$BIN"
             if readelf -l "$BIN" | grep -q INTERP; then
               echo "ERROR: $BIN is dynamically linked" >&2
@@ -116,6 +116,7 @@ jobs:
         run: |
           cp openwrt/diplay-cast/src/openxplay-relay openwrt/diplay-cast/src/openxplay-relay-${{ matrix.arch }}
           cp openwrt/diplay-cast/src/openxplay-receiver openwrt/diplay-cast/src/openxplay-receiver-${{ matrix.arch }}
+          cp openwrt/diplay-cast/src/oxp-replay openwrt/diplay-cast/src/oxp-replay-${{ matrix.arch }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -124,6 +125,7 @@ jobs:
           path: |
             openwrt/diplay-cast/src/openxplay-relay-${{ matrix.arch }}
             openwrt/diplay-cast/src/openxplay-receiver-${{ matrix.arch }}
+            openwrt/diplay-cast/src/oxp-replay-${{ matrix.arch }}
             openwrt/dist/*.ipk
             openwrt/dist/*.apk
           if-no-files-found: error
@@ -153,7 +155,8 @@ jobs:
           # Recursive: download-artifact keeps per-job subdirectories.
           mapfile -t FILES < <(find artifacts -type f \
             \( -name '*.ipk' -o -name '*.apk' \
-               -o -name 'openxplay-relay-*' -o -name 'openxplay-receiver-*' \) | sort)
+               -o -name 'openxplay-relay-*' -o -name 'openxplay-receiver-*' \
+               -o -name 'oxp-replay-*' \) | sort)
           N=${#FILES[@]}
           echo "asset count: $N"
           [ "$N" -gt 0 ] || { echo "::error::no release assets found"; exit 1; }
@@ -164,7 +167,8 @@ jobs:
           # Re-check after pruning (0-byte files may have been in FILES).
           mapfile -t FILES < <(find artifacts -type f \
             \( -name '*.ipk' -o -name '*.apk' \
-               -o -name 'openxplay-relay-*' -o -name 'openxplay-receiver-*' \) | sort)
+               -o -name 'openxplay-relay-*' -o -name 'openxplay-receiver-*' \
+               -o -name 'oxp-replay-*' \) | sort)
           [ "${#FILES[@]}" -gt 0 ] || { echo "::error::no assets after pruning"; exit 1; }
 
           TAG="${GITHUB_REF_NAME}"
@@ -189,6 +193,10 @@ jobs:
 
           ipk 内含三个二进制：`openxplay-receiver`（接收端主进程）、`oxp-relay`（输出端）、
           `oxp-relay-wrapper`（注入 --cast 参数）。车机只需 DLNA 接收端。
+
+          裸二进制另附 `oxp-replay-<arch>`（本地 H.264 文件回放 producer），用于无 WiFi/无 iPhone
+          时单独验证 DLNA 投递链路：`oxp-replay --file test.h264 --unix SOCK` 喂给
+          `openxplay-relay --cast --unix SOCK`，绕过 receiver/AP，不依赖 CarPlay 会话。
 
           **MFi 证书不随包分发**：安装后自行把 `identity.pk8` / `certificate.p7b`
           放到 `/etc/diplay/identity/`（权限 600）。详见仓库 README。
