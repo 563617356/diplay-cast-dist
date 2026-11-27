@@ -814,6 +814,18 @@ impl LinuxWiredController {
         }
     }
     fn head_unit_network(&self, generation: u64) -> Result<()> {
+        // Headless DLNA output: the car head unit reaches video over IP (DLNA/UPnP),
+        // not over a Wi-Fi hotspot from this receiver. On USB transport with no Wi-Fi
+        // card, hostapd cannot start and would block CarPlay startup forever. Allow
+        // skipping hotspot bring-up entirely via OXP_SKIP_HOTSPOT=1.
+        if std::env::var_os("OXP_SKIP_HOTSPOT").is_some() {
+            self.stage_event(
+                generation,
+                "HotspotSkipped",
+                serde_json::json!({"reason": "headless-dlna"}),
+            )?;
+            return Ok(());
+        }
         if self.state.0.lock().unwrap().hotspot.is_some() {
             self.validate_head_unit()?;
             while !self.platform.car_ready()? {

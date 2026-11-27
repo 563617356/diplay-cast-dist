@@ -69,6 +69,14 @@ start_service() {
 	config_get wifi_country main wifi_country CN
 	export OXP_WIFI_COUNTRY="$wifi_country"
 
+	# Headless DLNA output: video reaches the head unit over IP, so the receiver
+	# does not need to bring up a Wi-Fi hotspot. On USB transport on hardware with
+	# no usable Wi-Fi card, hostapd would fail and block startup. skip_hotspot=1
+	# exports the flag consumed by the wired controller.
+	local skip_hotspot
+	config_get_bool skip_hotspot main skip_hotspot 0
+	[ "$skip_hotspot" -eq 1 ] && export OXP_SKIP_HOTSPOT=1
+
 	procd_open_instance diplay-cast
 	procd_set_param command /usr/bin/openxplay-receiver $args $extra_args
 	procd_set_param respawn ${respawn_threshold:-3600} ${respawn_timeout:-5} ${respawn_retry:-5}

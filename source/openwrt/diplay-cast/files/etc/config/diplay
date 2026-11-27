@@ -17,6 +17,7 @@ config diplay 'main'
 	option network_mode 'device-hotspot'   # device-hotspot / shared-wifi
 #	option iphone 'AA:BB:CC:DD:EE:FF'     # optional: select a bonded iPhone
 #	option usb_charging_ma '500'          # usb only: 500 / 1500 / 2400
+#	option skip_hotspot '1'               # headless DLNA: skip receiver Wi-Fi AP (USB/no-Wi-Fi hosts)
 
 # ---- MFi identity (place files yourself, mode 0600) ----
 	option identity_dir '/etc/diplay/identity'
