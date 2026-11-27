@@ -2494,6 +2494,16 @@ impl LinuxRelayAdmin {
                         "Start cancelled",
                     ));
                 }
+                // Headless USB DLNA: there is no Carlink head unit or browser screen to
+                // wait for -- the car is reached over DLNA IP by the output process.
+                // The default gate would wait 60s (carlink) / 20s (screen), then fail
+                // and stop the controller before the USB CarPlay stack ever starts.
+                // OXP_SKIP_HOTSPOT=1 (same switch as the USB hotspot skip) releases it.
+                if std::env::var_os("OXP_SKIP_HOTSPOT").is_some()
+                    && settings.lock().unwrap().transport == "usb"
+                {
+                    return Ok(true);
+                }
                 let output = settings.lock().unwrap().output.clone();
                 let (ready, reported) = {
                     let c = carlink.lock().unwrap();

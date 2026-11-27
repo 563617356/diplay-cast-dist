@@ -544,6 +544,25 @@ impl LinuxHotspot {
         if let Some(info) = &self.state.lock().unwrap().ready {
             return Ok(info.clone());
         }
+        // Headless USB DLNA output: no Wi-Fi hotspot is needed -- the car head unit
+        // is reached over plain IP by the output process. On a host without a Wi-Fi
+        // card, hostapd/nmcli cannot start an AP and every tick retries, blocking
+        // CarPlay startup. OXP_SKIP_HOTSPOT=1 short-circuits AP activation with a
+        // synthetic info so callers that only need an Ok() (admin/provisioning) proceed.
+        if std::env::var_os("OXP_SKIP_HOTSPOT").is_some() {
+            let info = WirelessHotspotInfo {
+                ssid: String::new(),
+                passphrase: String::new(),
+                channel: 0,
+                security: Iap2WirelessSecurity::None,
+                host_address: None,
+                bssid: None,
+                access_point_bssid: None,
+                interface_name: Some(self.interface.clone()),
+            };
+            self.state.lock().unwrap().ready = Some(info.clone());
+            return Ok(info);
+        }
         let deadline = Instant::now() + timeout;
         let cmd = |args: &[&str]| -> Result<String> {
             if self.closed.load(Ordering::Acquire) {
@@ -849,6 +868,9 @@ impl LinuxHotspot {
         self.radio(&|args| command(self.runner.as_ref(), args, Duration::from_secs(5)))
     }
     pub fn validate_ready(&self) -> Result<()> {
+        if std::env::var_os("OXP_SKIP_HOTSPOT").is_some() {
+            return Ok(());
+        }
         let (expected, prefix, connection, profile_channel) = {
             let state = self.state.lock().unwrap();
             (
