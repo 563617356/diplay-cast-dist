@@ -15,7 +15,7 @@ OpenWrt 在这里是**协议网关**：它一边假装成车机接住 iPhone 的
 | [OpenXPlay-DiPlay-Cast](https://github.com/563617356/OpenXPlay-DiPlay-Cast) | **源码主库**：开发、CI 云编译、Release 发布都在这里 |
 | **本仓库** `diplay-cast-dist` | **分发库**：开箱即用的安装包 + 配置 + 完整源码镜像（`source/`），方便直接下载 |
 
-两库内容各自保留。本仓库的 `source/` 是源码主库的完整快照（v0.1.3），若要做二次开发或重新编译，请到源码主库。
+两库内容各自保留。本仓库的 `source/` 是源码主库的完整快照（v0.1.4），若要做二次开发或重新编译，请到源码主库。
 
 ## 选哪个文件
 
@@ -43,14 +43,14 @@ command -v apk && echo "apk 固件" || echo "opkg 固件"
 
 ```sh
 cd /tmp
-# 把 packages/aarch64_cortex-a53/diplay-cast-0.1.3-r1-aarch64_cortex-a53.apk 传上来
-apk add --allow-untrusted diplay-cast-0.1.3-r1-aarch64_cortex-a53.apk
+# 把 packages/aarch64_cortex-a53/diplay-cast-0.1.4-r1-aarch64_cortex-a53.apk 传上来
+apk add --allow-untrusted diplay-cast-0.1.4-r1-aarch64_cortex-a53.apk
 ```
 
 opkg 固件：
 
 ```sh
-opkg install diplay-cast_0.1.3-1_aarch64_cortex-a53.ipk
+opkg install diplay-cast_0.1.4-1_aarch64_cortex-a53.ipk
 ```
 
 ## 目录说明
@@ -90,6 +90,7 @@ oxp-replay --file test.h264 --unix /run/oxp.sock # 喂本地 H.264 文件
 3. **改配置**：`vi /etc/config/diplay`，或把 `config/diplay-reference.txt` 拷过去。
    - 有蓝牙 → `option transport 'wireless'`（默认）
    - **无蓝牙** → 必须改成 `option transport 'usb'`，iPhone 用数据线插路由器 USB 口
+   - **无 Wi-Fi 的无头设备** → 再加 `option skip_hotspot '1'`（v0.1.4 起），跳过 hostapd/nmcli 与 Carlink/屏幕启动门禁，直接走 DLNA 输出
 4. **启动**：
    ```sh
    /etc/init.d/diplay-cast enable
@@ -105,7 +106,7 @@ oxp-replay --file test.h264 --unix /run/oxp.sock # 喂本地 H.264 文件
 
 ## 版本与来源
 
-- 版本：**v0.1.3**（修复 `--cast` 参数解析 + 新增 `oxp-replay` 裸二进制；同时提供 ipk + apk）
+- 版本：**v0.1.4**（USB 有线 / 无 Wi-Fi 无头设备修复：新增 `skip_hotspot` 开关，跳过热点与启动门禁；沿用 v0.1.3 的 `--cast` 修复和 `oxp-replay`；同时提供 ipk + apk）
 - 编译源码与 CI：[OpenXPlay-DiPlay-Cast](https://github.com/563617356/OpenXPlay-DiPlay-Cast)
 - 本仓库只存放编译产物和配置，不存放源码
 - 上游依赖遵循 AGPL-3.0，详见源码仓库的 LICENSE / NOTICE / THIRD-PARTY-LICENSES

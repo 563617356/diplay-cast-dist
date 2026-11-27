@@ -179,12 +179,18 @@ jobs:
 
           NOTES_FILE="$(mktemp)"
           cat > "$NOTES_FILE" <<'NOTES'
-          ## DiPlay Cast v0.1.3 — OpenWrt 全栈 CarPlay → DLNA，ipk + apk 双格式
+          ## DiPlay Cast v0.1.4 — OpenWrt 全栈 CarPlay → DLNA，ipk + apk 双格式
 
-          **v0.1.3 变更**（相对 v0.1.2）：
-          - 修复 `--cast` / `--cast-no-audio` 被当成带值参数导致 wrapper 启动失败的问题
-            （无值 `--cast` 现在可正常解析）。
-          - 新增裸二进制 `oxp-replay-<arch>`，支持无 WiFi / 无 iPhone 的本地 H.264
+          **v0.1.4 变更**（相对 v0.1.3）：
+          - USB 有线 / 无 Wi-Fi 的无头设备修复：新增 `skip_hotspot` UCI 开关，跳过接收端
+            Wi-Fi 热点拉起（无需 hostapd / nmcli），并跳过 Carlink / 屏幕启动门禁，
+            避免没有车机屏幕时卡在 `stage Failed`。真机 iPhone USB 已联调通过。
+          - 配置：在 `/etc/config/diplay` 的 `main` 段加入 `option skip_hotspot '1'`
+            即启用；默认 0，保持原无线流程不变。
+
+          沿用 v0.1.3：
+          - `--cast` / `--cast-no-audio` 为无值开关（修复参数解析导致 wrapper 启动失败）。
+          - 裸二进制 `oxp-replay-<arch>` 支持无 WiFi / 无 iPhone 的本地 H.264
             回放验证 DLNA 投递链路。
 
           同时发布两种包格式，按固件版本选择：

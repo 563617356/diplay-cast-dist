@@ -1,8 +1,8 @@
-# ===== /etc/config/diplay — DiPlay Cast v0.1.3 =====
+# ===== /etc/config/diplay — DiPlay Cast v0.1.4 =====
 # 全栈版本：接收端 + 输出端 + DLNA 都在路由器上运行
 # 安装:
-#   OpenWrt/ImmortalWrt 24.10 及更早 (opkg): opkg install diplay-cast_0.1.3-1_<arch>.ipk
-#   OpenWrt/ImmortalWrt 25.12+ (apk):         apk add --allow-untrusted diplay-cast-0.1.3-r1-<arch>.apk
+#   OpenWrt/ImmortalWrt 24.10 及更早 (opkg): opkg install diplay-cast_0.1.4-1_<arch>.ipk
+#   OpenWrt/ImmortalWrt 25.12+ (apk):         apk add --allow-untrusted diplay-cast-0.1.4-r1-<arch>.apk
 # 生效: /etc/init.d/diplay-cast restart
 # 日志: logread -f | grep -iE 'oxp|diplay|carplay'
 
@@ -23,6 +23,7 @@ config diplay 'main'
 	option network_mode 'device-hotspot'  # device-hotspot / shared-wifi
 #	option iphone 'AA:BB:CC:DD:EE:FF'     # 可选：指定已配对的 iPhone
 #	option usb_charging_ma '500'          # 仅 usb：500 / 1500 / 2400
+#	option skip_hotspot '1'               # v0.1.4: USB/无 Wi-Fi 无头设备跳过热点与启动门禁（按需开启）
 
 # ---- MFi 证书（自己放，权限 600）----
 	option identity_dir '/etc/diplay/identity'
@@ -52,6 +53,6 @@ config diplay 'main'
 # ===== 快速部署 =====
 # 1. 按固件版本安装对应安装包（见顶部安装命令）
 # 2. mkdir -p /etc/diplay/identity; scp 两个证书进去; chmod 600
-# 3. vi /etc/config/diplay  (无蓝牙的设备把 transport 改成 usb)
+# 3. vi /etc/config/diplay  (无蓝牙的设备把 transport 改成 usb；无 Wi-Fi 再开 skip_hotspot=1)
 # 4. /etc/init.d/diplay-cast enable && /etc/init.d/diplay-cast start
 # 5. iPhone 连接（首次亮屏解锁）→ 车机开 DLNA 接收 → 应自动发现并推流

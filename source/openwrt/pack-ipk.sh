@@ -9,7 +9,7 @@
 #   TARGET=aarch64-unknown-linux-musl bash pack-ipk.sh
 #   TARGET=x86_64-unknown-linux-musl  bash pack-ipk.sh
 #
-# Produces: dist/diplay-cast_0.1.3-1_<opkg-arch>.ipk
+# Produces: dist/diplay-cast_0.1.4-1_<opkg-arch>.ipk
 
 set -euo pipefail
 
@@ -28,7 +28,7 @@ case "$TARGET" in
   *) echo "Unsupported target: $TARGET" >&2; exit 1 ;;
 esac
 
-VER=0.1.3
+VER=0.1.4
 REL=1
 IPK="diplay-cast_${VER}-${REL}_${OPKG_ARCH}.ipk"
 

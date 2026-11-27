@@ -70,11 +70,11 @@ TARGET=aarch64-unknown-linux-musl bash build-musl.sh
 
 # 2a. 打成 ipk（不依赖 OpenWrt SDK，用 ar + tar）
 TARGET=aarch64-unknown-linux-musl bash pack-ipk.sh
-# 产物: openwrt/dist/diplay-cast_0.1.3-1_<arch>.ipk
+# 产物: openwrt/dist/diplay-cast_0.1.4-1_<arch>.ipk
 
 # 2b. 打成 apk（需要下载 OpenWrt 25.12.5 SDK，Linux/macOS 主机）
 TARGET=aarch64-unknown-linux-musl bash build-apk.sh
-# 产物: openwrt/dist/diplay-cast-0.1.3-r1_<arch>.apk
+# 产物: openwrt/dist/diplay-cast-0.1.4-r1_<arch>.apk
 ```
 
 `build-musl.sh` 已处理 ring（加密依赖）所需的 musl sysroot、clang 参数与静态归档器，并支持 aarch64 / x86_64 两个目标。
@@ -84,9 +84,9 @@ TARGET=aarch64-unknown-linux-musl bash build-apk.sh
 1. 安装包（按固件选一种，不要混用）：
    ```sh
    # 24.10 及更早 (opkg)
-   opkg install diplay-cast_0.1.3-1_<arch>.ipk
+   opkg install diplay-cast_0.1.4-1_<arch>.ipk
    # 25.12+ (apk)
-   apk add --allow-untrusted diplay-cast-0.1.3-r1_<arch>.apk
+   apk add --allow-untrusted diplay-cast-0.1.4-r1_<arch>.apk
    ```
 2. **放置 MFi 身份**（必须自己做，包里绝不含）：
 
@@ -104,6 +104,7 @@ TARGET=aarch64-unknown-linux-musl bash build-apk.sh
    - `wifi_ssid` / `wifi_key` / `wifi_country`：中继热点，车机连它
    - `cast_udn`：可选，指定车机 DMR 的 UDN；留空自动选第一个
    - `cast_interface`：可选，指定 LAN 口 IPv4，避免多网卡选错
+   - `skip_hotspot`：USB 有线 / 无 Wi-Fi 的无头设备设为 `1`，跳过接收端热点及 Carlink/屏幕启动门禁，直接走 DLNA 输出（v0.1.4 起）
 4. 启动：`/etc/init.d/diplay-cast enable && /etc/init.d/diplay-cast start`
 5. 车机打开 DLNA/投屏接收应用，中继会自动发现它并开始推流。
 

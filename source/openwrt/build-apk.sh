@@ -13,7 +13,7 @@
 #   TARGET=aarch64-unknown-linux-musl bash build-apk.sh
 #   TARGET=x86_64-unknown-linux-musl  bash build-apk.sh
 #
-# Produces: dist/diplay-cast-0.1.3-r1-<arch>.apk
+# Produces: dist/diplay-cast-0.1.4-r1-<arch>.apk
 # (apk files carry no arch segment in their name; we append one so the two
 #  matrix artifacts don't collide when merged into a single Release.)
 
@@ -108,7 +108,7 @@ APK="$(find "$SDK/bin" -type f -name 'diplay-cast-*.apk' | head -n1)"
 [ -n "$APK" ] || { echo "::error::no apk produced under $SDK/bin" >&2; find "$SDK/bin" -type f | head -30; exit 1; }
 
 mkdir -p "$DIST"
-OUT="$DIST/diplay-cast-0.1.3-r1-${APK_ARCH}.apk"
+OUT="$DIST/diplay-cast-0.1.4-r1-${APK_ARCH}.apk"
 cp -f "$APK" "$OUT"
 echo "==> Done: $OUT"
 ls -lh "$OUT"
