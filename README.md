@@ -15,7 +15,7 @@ OpenWrt 在这里是**协议网关**：它一边假装成车机接住 iPhone 的
 | [OpenXPlay-DiPlay-Cast](https://github.com/563617356/OpenXPlay-DiPlay-Cast) | **源码主库**：开发、CI 云编译、Release 发布都在这里 |
 | **本仓库** `diplay-cast-dist` | **分发库**：开箱即用的安装包 + 配置 + 完整源码镜像（`source/`），方便直接下载 |
 
-两库内容各自保留。本仓库的 `source/` 是源码主库的完整快照（v0.1.2），若要做二次开发或重新编译，请到源码主库。
+两库内容各自保留。本仓库的 `source/` 是源码主库的完整快照（v0.1.3），若要做二次开发或重新编译，请到源码主库。
 
 ## 选哪个文件
 
@@ -43,14 +43,14 @@ command -v apk && echo "apk 固件" || echo "opkg 固件"
 
 ```sh
 cd /tmp
-# 把 packages/aarch64_cortex-a53/diplay-cast-0.1.2-r1-aarch64_cortex-a53.apk 传上来
-apk add --allow-untrusted diplay-cast-0.1.2-r1-aarch64_cortex-a53.apk
+# 把 packages/aarch64_cortex-a53/diplay-cast-0.1.3-r1-aarch64_cortex-a53.apk 传上来
+apk add --allow-untrusted diplay-cast-0.1.3-r1-aarch64_cortex-a53.apk
 ```
 
 opkg 固件：
 
 ```sh
-opkg install diplay-cast_0.1.2-1_aarch64_cortex-a53.ipk
+opkg install diplay-cast_0.1.3-1_aarch64_cortex-a53.ipk
 ```
 
 ## 目录说明
@@ -62,12 +62,20 @@ packages/
     *.ipk                      24.10 及更早安装包
     openxplay-receiver-*       接收端裸二进制（手动部署时用）
     openxplay-relay-*          输出端裸二进制（手动部署时用）
+    oxp-replay-*               本地 H.264 回放 producer（无需 WiFi/iPhone 验证 DLNA）
   x86_64/                      x86 软路由，文件同上
 config/
   diplay-reference.txt         完整配置模板 + 中文注释（推荐）
 ```
 
 安装包内已含三个程序：`openxplay-receiver`（接收端主进程）、`oxp-relay`（输出端）、`oxp-relay-wrapper`（注入 DLNA 参数）。裸二进制仅供不想用包管理器、手工部署的场景。
+
+`oxp-replay` 用法（无 WiFi / 无 iPhone 时单独验证投递链路）：
+```sh
+oxp-relay --cast --unix /run/oxp.sock &          # 输出端监听
+oxp-replay --file test.h264 --unix /run/oxp.sock # 喂本地 H.264 文件
+```
+注意 v0.1.3 起 `--cast` 是无值开关；旧包需写 `--cast 1`。
 
 ## 部署步骤
 
@@ -97,7 +105,7 @@ config/
 
 ## 版本与来源
 
-- 版本：**v0.1.2**（首个同时提供 ipk + apk 的版本）
+- 版本：**v0.1.3**（修复 `--cast` 参数解析 + 新增 `oxp-replay` 裸二进制；同时提供 ipk + apk）
 - 编译源码与 CI：[OpenXPlay-DiPlay-Cast](https://github.com/563617356/OpenXPlay-DiPlay-Cast)
 - 本仓库只存放编译产物和配置，不存放源码
 - 上游依赖遵循 AGPL-3.0，详见源码仓库的 LICENSE / NOTICE / THIRD-PARTY-LICENSES

@@ -1,8 +1,8 @@
-# ===== /etc/config/diplay — DiPlay Cast v0.1.2 =====
+# ===== /etc/config/diplay — DiPlay Cast v0.1.3 =====
 # 全栈版本：接收端 + 输出端 + DLNA 都在路由器上运行
 # 安装:
-#   OpenWrt/ImmortalWrt 24.10 及更早 (opkg): opkg install diplay-cast_0.1.2-1_<arch>.ipk
-#   OpenWrt/ImmortalWrt 25.12+ (apk):         apk add --allow-untrusted diplay-cast-0.1.2-r1-<arch>.apk
+#   OpenWrt/ImmortalWrt 24.10 及更早 (opkg): opkg install diplay-cast_0.1.3-1_<arch>.ipk
+#   OpenWrt/ImmortalWrt 25.12+ (apk):         apk add --allow-untrusted diplay-cast-0.1.3-r1-<arch>.apk
 # 生效: /etc/init.d/diplay-cast restart
 # 日志: logread -f | grep -iE 'oxp|diplay|carplay'
 
